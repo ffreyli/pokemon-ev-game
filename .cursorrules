@@ -1,0 +1,48 @@
+# Cursor Rules for Pokémon EV Trainer Game
+
+## Code Quality Standards
+
+### Linting
+- **ALWAYS** run `npm run lint` before finalizing any code changes
+- Fix all linting errors before committing code
+- Use `npm run lint:fix` to automatically fix auto-fixable issues
+- Ensure zero linting warnings (max-warnings: 0 is enforced)
+
+### Unit Testing
+- **ALWAYS** run `npm run test:run` after making code changes to ensure all tests pass
+- Write unit tests for new features and bug fixes
+- Maintain or improve test coverage when adding new code
+- Run `npm run test:coverage` periodically to check coverage
+- All tests must pass before code is considered complete
+
+### Code Changes Workflow
+1. Make code changes
+2. Run `npm run lint` - fix any linting errors
+3. Run `npm run test:run` - ensure all tests pass
+4. If tests fail, fix the code or update tests as appropriate
+5. Only after both linting and tests pass, consider the change complete
+
+### Testing Requirements
+- Use Vitest for unit testing
+- Use React Testing Library for React component tests
+- Test files should be named `*.test.ts` or `*.test.tsx`
+- Tests should be placed alongside the code they test or in a `__tests__` directory
+
+### Linting Requirements
+- Use ESLint with TypeScript support
+- Follow React best practices (hooks, component patterns)
+- Maintain consistent code style across the project
+- Fix all TypeScript errors and ESLint warnings
+
+### Before Committing
+- ✅ All linting checks pass (`npm run lint`)
+- ✅ All unit tests pass (`npm run test:run`)
+- ✅ No TypeScript compilation errors
+- ✅ Code follows project conventions
+
+## Project-Specific Guidelines
+- This is a React + TypeScript project using Vite
+- Uses Vitest for testing with jsdom environment
+- Follow React 19 patterns and best practices
+- Maintain type safety with TypeScript
+
