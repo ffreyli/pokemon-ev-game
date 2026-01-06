@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { StatName, EVStats, MAX_STAT_EVS, MAX_TOTAL_EVS } from '../types';
+import { Stats, MAX_STAT_EVS, MAX_TOTAL_EVS } from '../types';
 
 interface TrainingGameProps {
-  onTrain: (stat: keyof EVStats, amount: number) => void;
-  currentEVs: EVStats;
+  // Fix: Changed EVStats to Stats and removed unused StatName
+  onTrain: (stat: keyof Stats, amount: number) => void;
+  currentEVs: Stats;
 }
 
 const TrainingGame: React.FC<TrainingGameProps> = ({ onTrain, currentEVs }) => {
-  const [activeStat, setActiveStat] = useState<keyof EVStats | null>(null);
+  // Fix: Changed EVStats to Stats
+  const [activeStat, setActiveStat] = useState<keyof Stats | null>(null);
   const [clickCount, setClickCount] = useState(0);
   const [timer, setTimer] = useState(0);
   const [isGameRunning, setIsGameRunning] = useState(false);
@@ -16,7 +18,7 @@ const TrainingGame: React.FC<TrainingGameProps> = ({ onTrain, currentEVs }) => {
   // Fix: Use a type assertion to ensure Object.values returns a number array for calculation
   const totalEVs = (Object.values(currentEVs) as number[]).reduce((a, b) => a + b, 0);
 
-  const startTraining = (stat: keyof EVStats) => {
+  const startTraining = (stat: keyof Stats) => {
     setActiveStat(stat);
     setClickCount(0);
     setTimer(10);
@@ -43,7 +45,7 @@ const TrainingGame: React.FC<TrainingGameProps> = ({ onTrain, currentEVs }) => {
     }
   };
 
-  const statsList: { label: string; key: keyof EVStats; color: string }[] = [
+  const statsList: { label: string; key: keyof Stats; color: string }[] = [
     { label: 'HP', key: 'hp', color: 'bg-red-500' },
     { label: 'Attack', key: 'attack', color: 'bg-orange-500' },
     { label: 'Defense', key: 'defense', color: 'bg-yellow-500' },

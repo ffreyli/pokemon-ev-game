@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { EVStats, MAX_STAT_EVS } from '../types';
+import { Stats, MAX_STAT_EVS } from '../types';
 
 interface StatChartProps {
-  evs: EVStats;
+  // Fix: Changed EVStats to Stats to match types.ts
+  evs: Stats;
 }
 
 const StatChart: React.FC<StatChartProps> = ({ evs }) => {

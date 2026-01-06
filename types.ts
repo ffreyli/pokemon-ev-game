@@ -1,14 +1,7 @@
 
-export enum StatName {
-  HP = 'HP',
-  Attack = 'Attack',
-  Defense = 'Defense',
-  SpAttack = 'Sp. Atk',
-  SpDefense = 'Sp. Def',
-  Speed = 'Speed'
-}
+export type StatKey = 'hp' | 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed';
 
-export interface EVStats {
+export interface Stats {
   hp: number;
   attack: number;
   defense: number;
@@ -17,21 +10,10 @@ export interface EVStats {
   speed: number;
 }
 
-export interface BaseStats {
-  hp: number;
-  attack: number;
-  defense: number;
-  spAttack: number;
-  spDefense: number;
-  speed: number;
-}
-
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  unlocked: boolean;
-  unlockedAt?: number;
+export interface Nature {
+  name: string;
+  plus?: StatKey;
+  minus?: StatKey;
 }
 
 export interface Pokemon {
@@ -40,21 +22,26 @@ export interface Pokemon {
   species: string;
   speciesNumber: number;
   level: number;
-  evs: EVStats;
-  baseStats: BaseStats;
-  description: string;
+  item: string;
+  ability: string;
+  nature: string;
+  gender: string;
+  shiny: boolean;
+  evs: Stats;
+  ivs: Stats;
+  moves: string[];
+  baseStats: Stats;
   createdAt: number;
   updatedAt: number;
-  achievements: string[];
 }
 
 export interface Team {
   id: string;
   name: string;
-  pokemonIds: string[];
-  createdAt: number;
+  pokemons: Pokemon[];
   updatedAt: number;
 }
 
 export const MAX_TOTAL_EVS = 510;
-export const MAX_STAT_EVS = 252; // Modern competitive standard is 252, though 255 is hardware limit
+export const MAX_STAT_EVS = 252;
+export const MAX_IV = 31;

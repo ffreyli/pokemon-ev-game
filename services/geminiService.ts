@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Pokemon, StatName } from "../types";
+import { Pokemon } from "../types";
 
 export const getAICoaching = async (pokemon: Pokemon): Promise<string> => {
   // Fix: Initialize GoogleGenAI using process.env.API_KEY directly as per guidelines
