@@ -10,7 +10,9 @@ interface TeamViewProps {
 }
 
 const TeamView: React.FC<TeamViewProps> = ({ team, allPokemon, onRemove, onSelect }) => {
-  const teamPokemon = team.pokemonIds.map(id => allPokemon.find(p => p.id === id)).filter(Boolean) as Pokemon[];
+  // Fix: The Team interface in types.ts already contains the 'pokemons' array of Pokemon objects.
+  // We use team.pokemons directly instead of trying to map non-existent pokemonIds.
+  const teamPokemon = team.pokemons;
 
   return (
     <div className="bg-blue-600 p-6 rounded-3xl shadow-xl text-white">

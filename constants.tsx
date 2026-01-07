@@ -1,6 +1,5 @@
 
-import React from 'react';
-import { Nature, StatKey, Stats, Pokemon } from './types';
+import { Nature, StatKey, Move, Generation } from './types';
 
 export const POKEMON_SPECIES_LIST = [
   { name: "Pikachu", number: 25, base: { hp: 35, attack: 55, defense: 40, spAttack: 50, spDefense: 50, speed: 90 } },
@@ -11,9 +10,49 @@ export const POKEMON_SPECIES_LIST = [
   { name: "Gardevoir", number: 282, base: { hp: 68, attack: 65, defense: 65, spAttack: 125, spDefense: 115, speed: 80 } },
   { name: "Snorlax", number: 143, base: { hp: 160, attack: 110, defense: 65, spAttack: 65, spDefense: 110, speed: 30 } },
   { name: "Umbreon", number: 197, base: { hp: 95, attack: 65, defense: 110, spAttack: 60, spDefense: 130, speed: 65 } },
-  { name: "Dragapult", number: 887, base: { hp: 88, attack: 120, defense: 75, spAttack: 100, spDefense: 75, speed: 142 } },
-  { name: "Tinkaton", number: 959, base: { hp: 85, attack: 75, defense: 77, spAttack: 70, spDefense: 105, speed: 94 } },
+  { name: "Incineroar", number: 727, base: { hp: 95, attack: 115, defense: 90, spAttack: 80, spDefense: 90, speed: 60 } },
+  { name: "Amoonguss", number: 591, base: { hp: 114, attack: 85, defense: 70, spAttack: 85, spDefense: 80, speed: 30 } },
+  { name: "Rillaboom", number: 812, base: { hp: 100, attack: 125, defense: 90, spAttack: 60, spDefense: 70, speed: 85 } },
+  { name: "Flutter Mane", number: 987, base: { hp: 55, attack: 55, defense: 55, spAttack: 135, spDefense: 135, speed: 135 } },
+  { name: "Urshifu", number: 892, base: { hp: 100, attack: 130, defense: 100, spAttack: 63, spDefense: 60, speed: 97 } },
+  { name: "Farigiraf", number: 981, base: { hp: 120, attack: 90, defense: 70, spAttack: 110, spDefense: 70, speed: 60 } },
 ];
+
+export const MOVE_DATABASE: Record<string, Move> = {
+  "Tackle": { name: "Tackle", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 35 },
+  "Quick Attack": { name: "Quick Attack", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 30 },
+  "Thunderbolt": { name: "Thunderbolt", type: "Electric", category: "Special", power: 90, accuracy: 100, pp: 15 },
+  "Flamethrower": { name: "Flamethrower", type: "Fire", category: "Special", power: 90, accuracy: 100, pp: 15 },
+  "Hydro Pump": { name: "Hydro Pump", type: "Water", category: "Special", power: 110, accuracy: 80, pp: 5 },
+  "Wood Hammer": { name: "Wood Hammer", type: "Grass", category: "Physical", power: 120, accuracy: 100, pp: 15 },
+  "Flare Blitz": { name: "Flare Blitz", type: "Fire", category: "Physical", power: 120, accuracy: 100, pp: 15 },
+  "Shadow Ball": { name: "Shadow Ball", type: "Ghost", category: "Special", power: 80, accuracy: 100, pp: 15 },
+  "Moonblast": { name: "Moonblast", type: "Fairy", category: "Special", power: 95, accuracy: 100, pp: 15 },
+  "Close Combat": { name: "Close Combat", type: "Fighting", category: "Physical", power: 120, accuracy: 100, pp: 5 },
+  "Surging Strikes": { name: "Surging Strikes", type: "Water", category: "Physical", power: 25, accuracy: 100, pp: 5 },
+  "Fake Out": { name: "Fake Out", type: "Normal", category: "Physical", power: 40, accuracy: 100, pp: 10 },
+  "Knock Off": { name: "Knock Off", type: "Dark", category: "Physical", power: 65, accuracy: 100, pp: 20 },
+  "Last Respects": { name: "Last Respects", type: "Ghost", category: "Physical", power: 50, accuracy: 100, pp: 10 },
+  "Surge": { name: "Surge", type: "Water", category: "Special", power: 80, accuracy: 100, pp: 15 },
+  "Earthquake": { name: "Earthquake", type: "Ground", category: "Physical", power: 100, accuracy: 100, pp: 10 },
+  "Dragon Claw": { name: "Dragon Claw", type: "Dragon", category: "Physical", power: 80, accuracy: 100, pp: 15 },
+  "Rock Slide": { name: "Rock Slide", type: "Rock", category: "Physical", power: 75, accuracy: 90, pp: 10 },
+  "Protect": { name: "Protect", type: "Normal", category: "Status", power: 0, accuracy: 100, pp: 10 },
+  "Spore": { name: "Spore", type: "Grass", category: "Status", power: 0, accuracy: 100, pp: 15 },
+  "Rage Powder": { name: "Rage Powder", type: "Bug", category: "Status", power: 0, accuracy: 100, pp: 20 },
+  "Pollen Puff": { name: "Pollen Puff", type: "Bug", category: "Special", power: 90, accuracy: 100, pp: 15 },
+};
+
+export const TYPE_CHART: Record<string, Record<string, number>> = {
+  "Normal": { "Ghost": 0, "Rock": 0.5, "Steel": 0.5 },
+  "Fire": { "Grass": 2, "Ice": 2, "Bug": 2, "Steel": 2, "Fire": 0.5, "Water": 0.5, "Rock": 0.5, "Dragon": 0.5 },
+  "Water": { "Fire": 2, "Ground": 2, "Rock": 2, "Water": 0.5, "Grass": 0.5, "Dragon": 0.5 },
+  "Electric": { "Water": 2, "Flying": 2, "Electric": 0.5, "Grass": 0.5, "Dragon": 0.5, "Ground": 0 },
+  "Grass": { "Water": 2, "Ground": 2, "Rock": 2, "Fire": 0.5, "Grass": 0.5, "Poison": 0.5, "Flying": 0.5, "Bug": 0.5, "Dragon": 0.5, "Steel": 0.5 },
+  "Fairy": { "Fighting": 2, "Dragon": 2, "Dark": 2, "Poison": 0.5, "Steel": 0.5, "Fire": 0.5 },
+  "Ghost": { "Psychic": 2, "Ghost": 2, "Dark": 0.5, "Normal": 0 },
+  "Dark": { "Psychic": 2, "Ghost": 2, "Fighting": 0.5, "Dark": 0.5, "Fairy": 0.5 },
+};
 
 export const NATURES: Nature[] = [
   { name: "Adamant", plus: "attack", minus: "spAttack" },
@@ -59,78 +98,44 @@ export const calculateActualStat = (statKey: StatKey, base: number, iv: number, 
 };
 
 export const STAT_LABELS: Record<StatKey, string> = {
-  hp: "HP",
-  attack: "Atk",
-  defense: "Def",
-  spAttack: "SpA",
-  spDefense: "SpD",
-  speed: "Spe"
+  hp: "HP", attack: "Atk", defense: "Def", spAttack: "SpA", spDefense: "SpD", speed: "Spe"
+};
+
+export const getEffectiveness = (moveType: string, targetSpecies: string, gen: Generation): number => {
+  const chart = TYPE_CHART[moveType];
+  if (!chart) return 1;
+  return chart[targetSpecies] !== undefined ? chart[targetSpecies] : 1;
+};
+
+export const isSpecialTypeGen3 = (type: string): boolean => {
+  return ["Fire", "Water", "Electric", "Grass", "Ice", "Psychic", "Dragon", "Dark"].includes(type);
 };
 
 export const SAMPLE_PUBLIC_TEAMS = [
   {
     id: "pub-vgc-1",
-    name: "Standard Balance Core",
-    author: "VGC_Expert",
+    name: "World Championship Balance",
+    author: "RayRizzo",
     pokemons: [
-      { species: "Incineroar", number: 727, item: "Sitrus Berry", ability: "Intimidate", moves: ["Fake Out", "Flare Blitz", "Parting Shot", "Knock Off"] },
-      { species: "Rillaboom", number: 812, item: "Assault Vest", ability: "Grassy Surge", moves: ["Fake Out", "Wood Hammer", "Grassy Glide", "U-turn"] },
-      { species: "Flutter Mane", number: 987, item: "Choice Specs", ability: "Protosynthesis", moves: ["Moonblast", "Shadow Ball", "Dazzling Gleam", "Thunderbolt"] },
-      { species: "Urshifu-Rapid-Strike", number: 892, item: "Focus Sash", ability: "Unseen Fist", moves: ["Surging Strikes", "Aqua Jet", "Close Combat", "Detect"] },
-      { species: "Amoonguss", number: 591, item: "Rocky Helmet", ability: "Regenerator", moves: ["Spore", "Rage Powder", "Pollun Puff", "Protect"] },
-      { species: "Farigiraf", number: 981, item: "Safety Goggles", ability: "Armor Tail", moves: ["Trick Room", "Psychic Noise", "Helping Hand", "Protect"] },
+      { species: "Incineroar", number: 727, item: "Sitrus Berry", ability: "Intimidate", nature: "Careful", evs: { hp: 252, attack: 4, defense: 76, spAttack: 0, spDefense: 156, speed: 20 }, moves: ["Fake Out", "Flare Blitz", "Parting Shot", "Knock Off"] },
+      { species: "Amoonguss", number: 591, item: "Rocky Helmet", ability: "Regenerator", nature: "Bold", evs: { hp: 252, attack: 0, defense: 156, spAttack: 0, spDefense: 100, speed: 0 }, moves: ["Spore", "Rage Powder", "Pollen Puff", "Protect"] },
+      { species: "Garchomp", number: 445, item: "Life Orb", ability: "Rough Skin", nature: "Jolly", evs: { hp: 0, attack: 252, defense: 4, spAttack: 0, spDefense: 0, speed: 252 }, moves: ["Earthquake", "Dragon Claw", "Rock Slide", "Protect"] },
+      { species: "Flutter Mane", number: 987, item: "Choice Specs", ability: "Protosynthesis", nature: "Timid", evs: { hp: 124, attack: 0, defense: 148, spAttack: 36, spDefense: 4, speed: 196 }, moves: ["Moonblast", "Shadow Ball", "Dazzling Gleam", "Thunderbolt"] },
+      { species: "Rillaboom", number: 812, item: "Assault Vest", ability: "Grassy Surge", nature: "Adamant", evs: { hp: 252, attack: 116, defense: 4, spAttack: 0, spDefense: 132, speed: 4 }, moves: ["Fake Out", "Wood Hammer", "Grassy Glide", "U-turn"] },
+      { species: "Urshifu", number: 892, item: "Focus Sash", ability: "Unseen Fist", nature: "Jolly", evs: { hp: 0, attack: 252, defense: 4, spAttack: 0, spDefense: 0, speed: 252 }, moves: ["Surging Strikes", "Close Combat", "Aqua Jet", "Detect"] },
     ]
   },
   {
-    id: "pub-rain-1",
-    name: "Pelagic Storm (Rain)",
-    author: "Showdown_Ace",
+    id: "pub-vgc-2",
+    name: "Trick Room Offense",
+    author: "WolfeyVGC",
     pokemons: [
-      { species: "Pelipper", number: 279, item: "Damp Rock", ability: "Drizzle", moves: ["Hurricane", "Weather Ball", "U-turn", "Roost"] },
-      { species: "Archaludon", number: 1022, item: "Power Herb", ability: "Stamina", moves: ["Electro Shot", "Flash Cannon", "Draco Meteor", "Body Press"] },
-      { species: "Basculegion-M", number: 902, item: "Choice Band", ability: "Swift Swim", moves: ["Last Respects", "Wave Crash", "Flip Turn", "Aqua Jet"] },
-      { species: "Zapdos", number: 145, item: "Heavy-Duty Boots", ability: "Static", moves: ["Thunder", "Hurricane", "Volt Switch", "Roost"] },
-      { species: "Iron Tread", number: 990, item: "Booster Energy", ability: "Quark Drive", moves: ["Earthquake", "Iron Head", "Rapid Spin", "Volt Switch"] },
-      { species: "Amoonguss", number: 591, item: "Black Sludge", ability: "Regenerator", moves: ["Spore", "Giga Drain", "Sludge Bomb", "Foul Play"] },
-    ]
-  },
-  {
-    id: "pub-trick-1",
-    name: "Lunar Eclipse (Hard TR)",
-    author: "GymLeader_Morty",
-    pokemons: [
-      { species: "Indeedee-F", number: 876, item: "Psychic Seed", ability: "Psychic Surge", moves: ["Follow Me", "Helping Hand", "Psychic Noise", "Trick Room"] },
-      { species: "Torkoal", number: 324, item: "Charcoal", ability: "Drought", moves: ["Eruption", "Heat Wave", "Solar Beam", "Protect"] },
-      { species: "Ursaluna-Bloodmoon", number: 1013, item: "Life Orb", ability: "Mind's Eye", moves: ["Blood Moon", "Earth Power", "Hyper Voice", "Protect"] },
-      { species: "Hatterene", number: 858, item: "Focus Sash", ability: "Magic Bounce", moves: ["Psychic", "Dazzling Gleam", "Trick Room", "Mystical Fire"] },
-      { species: "Gallade", number: 475, item: "Clear AMulet", ability: "Sharpness", moves: ["Sacred Sword", "Psycho Cutter", "Leaf Blade", "Protect"] },
-      { species: "Iron Hands", number: 992, item: "Assault Vest", ability: "Quark Drive", moves: ["Wild Charge", "Drain Punch", "Fake Out", "Volt Switch"] },
-    ]
-  },
-  {
-    id: "pub-sun-1",
-    name: "Solar Flare Offense",
-    author: "VGC_Regional_Finalist",
-    pokemons: [
-      { species: "Torkoal", number: 324, item: "Heat Rock", ability: "Drought", moves: ["Lava Plume", "Solar Beam", "Stealth Rock", "Yawn"] },
-      { species: "Venusaur", number: 3, item: "Life Orb", ability: "Chlorophyll", moves: ["Solar Beam", "Sludge Bomb", "Earth Power", "Weather Ball"] },
-      { species: "Walking Wake", number: 1009, item: "Choice Specs", ability: "Protosynthesis", moves: ["Hydro Steam", "Draco Meteor", "Flamethrower", "Dragon Pulse"] },
-      { species: "Flutter Mane", number: 987, item: "Booster Energy", ability: "Protosynthesis", moves: ["Moonblast", "Shadow Ball", "Mystical Fire", "Taunt"] },
-      { species: "Gouging Fire", number: 1020, item: "Leftovers", ability: "Protosynthesis", moves: ["Flare Blitz", "Dragon Claw", "Morning Sun", "Dragon Dance"] },
-      { species: "Kingambit", number: 983, item: "Black Glasses", ability: "Supreme Overlord", moves: ["Kowtow Cleave", "Sucker Punch", "Iron Head", "Swords Dance"] },
-    ]
-  },
-  {
-    id: "pub-gold-1",
-    name: "Gold Standard Balance",
-    author: "Showdown_Ladder_Hero",
-    pokemons: [
-      { species: "Gholdengo", number: 1000, item: "Choice Scarf", ability: "Good as Gold", moves: ["Make It Rain", "Shadow Ball", "Focus Blast", "Trick"] },
-      { species: "Dragonite", number: 149, item: "Heavy-Duty Boots", ability: "Multiscale", moves: ["Extreme Speed", "Earthquake", "Dragon Dance", "Roost"] },
-      { species: "Iron Valiant", number: 1006, item: "Booster Energy", ability: "Quark Drive", moves: ["Moonblast", "Close Combat", "Thunderbolt", "Shadow Ball"] },
-      { species: "Ting-Lu", number: 1003, item: "Leftovers", ability: "Vessel of Ruin", moves: ["Earthquake", "Ruination", "Stealth Rock", "Whirlwind"] },
-      { species: "Corviknight", number: 823, item: "Rocky Helmet", ability: "Mirror Armor", moves: ["Brave Bird", "U-turn", "Defog", "Roost"] },
-      { species: "Garganacl", number: 934, item: "Leftovers", ability: "Purifying Salt", moves: ["Salt Cure", "Recover", "Iron Defense", "Body Press"] },
+      { species: "Farigiraf", number: 981, item: "Safety Goggles", ability: "Armor Tail", nature: "Quiet", evs: { hp: 252, attack: 0, defense: 100, spAttack: 156, spDefense: 0, speed: 0 }, moves: ["Trick Room", "Psychic Noise", "Helping Hand", "Protect"] },
+      { species: "Snorlax", number: 143, item: "Iapapa Berry", ability: "Gluttony", nature: "Brave", evs: { hp: 252, attack: 252, defense: 4, spAttack: 0, spDefense: 0, speed: 0 }, moves: ["Facade", "High Horsepower", "Belly Drum", "Recycle"] },
+      { species: "Incineroar", number: 727, item: "Sitrus Berry", ability: "Intimidate", nature: "Sassy", evs: { hp: 252, attack: 0, defense: 100, spAttack: 0, spDefense: 156, speed: 0 }, moves: ["Fake Out", "Flare Blitz", "Parting Shot", "Knock Off"] },
+      { species: "Amoonguss", number: 591, item: "Eject Button", ability: "Regenerator", nature: "Sassy", evs: { hp: 252, attack: 0, defense: 156, spAttack: 0, spDefense: 100, speed: 0 }, moves: ["Spore", "Rage Powder", "Clear Smog", "Protect"] },
+      { species: "Ursaluna", number: 901, item: "Flame Orb", ability: "Guts", nature: "Brave", evs: { hp: 252, attack: 252, defense: 4, spAttack: 0, spDefense: 0, speed: 0 }, moves: ["Facade", "Headlong Rush", "Fire Punch", "Protect"] },
+      { species: "Cresselia", number: 488, item: "Mental Herb", ability: "Levitate", nature: "Relaxed", evs: { hp: 252, attack: 0, defense: 252, spAttack: 0, spDefense: 4, speed: 0 }, moves: ["Trick Room", "Lunar Blessing", "Ice Beam", "Helping Hand"] },
     ]
   }
 ];

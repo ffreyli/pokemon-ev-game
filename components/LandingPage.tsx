@@ -2,7 +2,8 @@
 import React from 'react';
 
 interface LandingPageProps {
-  onNavigate: (view: 'lab' | 'arena' | 'gallery') => void;
+  // Fix: Removed 'arena' and 'multiplayer' which are unused in navigation and caused type errors in App.tsx
+  onNavigate: (view: 'lab' | 'gallery' | 'stadium') => void;
   teamCount: number;
 }
 
@@ -15,7 +16,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, teamCount }) => {
           THE CHAMPION'S <span className="text-red-600">LAB</span>
         </h1>
         <p className="text-slate-500 max-w-2xl mx-auto font-bold text-lg leading-relaxed">
-          The ultimate suite for competitive Pokémon training. Build, optimize, and test your team against the world's finest champions.
+          The ultimate suite for competitive Pokémon training. Build, optimize, and test your team in real-time battles.
         </p>
       </div>
 
@@ -59,30 +60,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, teamCount }) => {
           </button>
         </div>
 
-        {/* Arena Card */}
-        <div className="bg-white rounded-[40px] border-2 border-slate-200 p-10 shadow-sm hover:shadow-xl hover:border-red-300 transition-all group flex flex-col justify-between">
+        {/* Stadium Card */}
+        <div className="bg-white rounded-[40px] border-2 border-slate-200 p-10 shadow-sm hover:shadow-xl hover:border-orange-300 transition-all group flex flex-col justify-between">
           <div>
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-blue-200 group-hover:rotate-6 transition-transform">
+            <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-orange-200 group-hover:rotate-6 transition-transform">
               <span className="text-2xl">🏟️</span>
             </div>
             <h3 className="text-2xl font-black text-slate-900 mb-4">THE STADIUM</h3>
             <p className="text-slate-500 text-sm font-bold leading-relaxed mb-8">
-              Test your training in real-time battle scenarios. Face random challengers or specifically targeted opponents to refine your strategy.
+              The grand stage. Challenge high-performance AI bots offline or duel real players globally via PVP sync codes.
             </p>
           </div>
           <button 
-            onClick={() => onNavigate('arena')}
-            className="w-full bg-slate-50 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all"
+            onClick={() => onNavigate('stadium')}
+            className="w-full bg-slate-50 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 group-hover:bg-orange-500 group-hover:text-white transition-all"
           >
-            Start Battle
+            Enter Stadium
           </button>
         </div>
       </div>
 
       {/* Quick Status / Call to Action */}
-      <div className="bg-red-600 rounded-[50px] p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl">
-        <div className="space-y-2 text-center md:text-left">
-          <h2 className="text-3xl font-black italic">READY FOR THE LEAGUE?</h2>
+      <div className="bg-red-600 rounded-[50px] p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="space-y-2 text-center md:text-left relative z-10">
+          <h2 className="text-3xl font-black italic">ARE YOU THE NEXT CHAMPION?</h2>
           <p className="font-bold opacity-80">
             {teamCount === 0 
               ? "Your current bench is empty. Start by drafting your first champion." 
@@ -90,18 +92,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, teamCount }) => {
           </p>
         </div>
         <button 
-          onClick={() => onNavigate(teamCount > 0 ? 'arena' : 'lab')}
-          className="bg-white text-red-600 px-10 py-5 rounded-3xl font-black shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-tighter"
+          onClick={() => onNavigate(teamCount > 0 ? 'stadium' : 'lab')}
+          className="bg-white text-red-600 px-10 py-5 rounded-3xl font-black shadow-xl hover:scale-105 transition-all text-sm uppercase tracking-tighter relative z-10"
         >
-          {teamCount > 0 ? 'ENTER STADIUM NOW' : 'GO TO THE LAB'}
+          {teamCount > 0 ? 'ENTER STADIUM' : 'GO TO THE LAB'}
         </button>
-      </div>
-
-      {/* Footer Info */}
-      <div className="text-center pt-10">
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-          Champion Lab v4.0 • Built for the competitive training elite
-        </p>
       </div>
     </div>
   );

@@ -1,16 +1,19 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Pokemon, Team, StatKey, MAX_STAT_EVS, MAX_IV, MAX_TOTAL_EVS } from './types';
-import { POKEMON_SPECIES_LIST, NATURES, calculateActualStat, STAT_LABELS } from './constants';
+import { Pokemon, Team, StatKey, MAX_STAT_EVS, MAX_IV, MAX_TOTAL_EVS, Stats, Generation } from './types';
+import { POKEMON_SPECIES_LIST, NATURES, calculateActualStat, STAT_LABELS, SAMPLE_PUBLIC_TEAMS } from './constants';
 import { exportToShowdown, parseShowdown } from './services/showdownParser';
 import BattleMode from './components/BattleMode';
 import PublicGallery from './components/PublicGallery';
 import LandingPage from './components/LandingPage';
+import MultiplayerBattle from './components/MultiplayerBattle';
 
 const TEAMS_STORAGE_KEY = 'champion-lab-teams-v4';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'lab' | 'arena' | 'gallery'>('home');
+  const [view, setView] = useState<'home' | 'lab' | 'gallery' | 'stadium'>('home');
+  const [stadiumMode, setStadiumMode] = useState<'select' | 'ai' | 'pvp'>('select');
+  const [currentGen, setCurrentGen] = useState<Generation>('GEN9');
   const [teams, setTeams] = useState<Team[]>(() => {
     const saved = localStorage.getItem(TEAMS_STORAGE_KEY);
     if (saved) {
@@ -26,7 +29,6 @@ const App: React.FC = () => {
   const [activeTeamId, setActiveTeamId] = useState<string>(teams[0]?.id || 'default');
   const [activePkmnIndex, setActivePkmnIndex] = useState<number>(0);
   const [showImportExport, setShowImportExport] = useState(false);
-  const [pasteText, setPasteText] = useState("");
   const [challengeTeam, setChallengeTeam] = useState<Pokemon[] | null>(null);
   
   const [speciesSearch, setSpeciesSearch] = useState("");
@@ -35,6 +37,13 @@ const App: React.FC = () => {
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const [availableMoves, setAvailableMoves] = useState<string[]>([]);
+  const [availableAbilities, setAvailableAbilities] = useState<string[]>([]);
+  const [moveSelectorSlot, setMoveSelectorSlot] = useState<number | null>(null);
+
+  const [multiplayerRoomId, setMultiplayerRoomId] = useState("");
+  const [activeMultiplayerRoom, setActiveMultiplayerRoom] = useState<string | null>(null);
 
   const currentTeam = teams.find(t => t.id === activeTeamId) || teams[0];
   const activePkmn = currentTeam.pokemons[activePkmnIndex];
@@ -66,6 +75,22 @@ const App: React.FC = () => {
   }, [speciesSearch, allSpeciesNames]);
 
   useEffect(() => {
+    if (activePkmn) {
+      const fetchPkmnData = async () => {
+        try {
+          const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${activePkmn.species.toLowerCase()}`);
+          const data = await res.json();
+          setAvailableMoves(data.moves.map((m: any) => m.move.name.replace(/-/g, ' ')));
+          setAvailableAbilities(data.abilities.map((a: any) => a.ability.name.replace(/-/g, ' ')));
+        } catch (e) {
+          console.error("Failed to fetch moves", e);
+        }
+      };
+      fetchPkmnData();
+    }
+  }, [activePkmn?.species]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
@@ -87,7 +112,7 @@ const App: React.FC = () => {
       speciesNumber: speciesData.id,
       level: 100,
       item: "",
-      ability: speciesData.abilities?.[0]?.ability?.name || "",
+      ability: speciesData.abilities?.[0]?.ability?.name.replace(/-/g, ' ') || "",
       nature: "Serious",
       gender: "M",
       shiny: false,
@@ -168,56 +193,49 @@ const App: React.FC = () => {
     if (activeTeamId === id) setActiveTeamId(filtered[0].id);
   };
 
-  const handleImport = (text: string = pasteText) => {
-    const parsed = parseShowdown(text);
-    const valid = parsed.map(p => ({
-      id: Math.random().toString(36).substr(2, 9),
-      nickname: p.nickname || p.species || 'Unknown',
-      species: p.species || 'unknown',
-      speciesNumber: p.speciesNumber || 1,
-      level: p.level || 100,
-      item: p.item || "",
-      ability: p.ability || "",
-      nature: p.nature || "Serious",
-      gender: "M",
-      shiny: p.shiny || false,
-      evs: p.evs || { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
-      ivs: p.ivs || { hp: 31, attack: 31, defense: 31, spAttack: 31, spDefense: 31, speed: 31 },
-      moves: p.moves || ["", "", "", ""],
-      baseStats: p.baseStats || { hp: 100, attack: 100, defense: 100, spAttack: 100, spDefense: 100, speed: 100 },
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    }));
-    
-    const updatedTeams = teams.map(t => t.id === activeTeamId ? {
-      ...t,
-      pokemons: valid as Pokemon[],
-      updatedAt: Date.now()
-    } : t);
-    setTeams(updatedTeams);
-    setShowImportExport(false);
+  const joinMultiplayerRoom = () => {
+    if (multiplayerRoomId.trim()) {
+      setActiveMultiplayerRoom(multiplayerRoomId.trim());
+    }
+  };
+
+  const generateRoomCode = () => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setMultiplayerRoomId(code);
   };
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans flex flex-col">
-      {/* Dynamic Header */}
       <header className="bg-red-600 text-white shadow-md z-50">
         <div className="max-w-[1600px] mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center gap-10">
             <button 
-              onClick={() => setView('home')} 
+              onClick={() => { setView('home'); setActiveMultiplayerRoom(null); setStadiumMode('select'); }} 
               className="text-xl font-black italic border-2 border-white px-2 py-0.5 tracking-tighter hover:bg-white hover:text-red-600 transition-colors"
             >
               CHAMPION HUB
             </button>
             <nav className="hidden sm:flex items-center gap-1 bg-red-700/40 p-1 rounded-xl">
-              <button onClick={() => setView('home')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'home' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>Home</button>
-              <button onClick={() => setView('lab')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'lab' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>The Lab</button>
-              <button onClick={() => setView('gallery')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'gallery' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>The Exhibit</button>
-              <button onClick={() => { setChallengeTeam(null); setView('arena'); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'arena' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>The Stadium</button>
+              <button onClick={() => { setView('home'); setActiveMultiplayerRoom(null); setStadiumMode('select'); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'home' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>Home</button>
+              <button onClick={() => { setView('lab'); setActiveMultiplayerRoom(null); setStadiumMode('select'); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'lab' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>Lab</button>
+              <button onClick={() => { setView('gallery'); setActiveMultiplayerRoom(null); setStadiumMode('select'); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'gallery' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>Exhibit</button>
+              <button onClick={() => { setView('stadium'); setActiveMultiplayerRoom(null); setStadiumMode('select'); }} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'stadium' ? 'bg-white text-red-600 shadow-sm' : 'text-white/70 hover:text-white'}`}>Stadium</button>
             </nav>
           </div>
           <div className="flex items-center gap-4">
+             {view === 'stadium' && stadiumMode === 'select' && (
+              <div className="flex bg-red-700/40 rounded-xl p-1 gap-1">
+                {(['GEN1', 'GEN3', 'GEN9'] as Generation[]).map(gen => (
+                  <button 
+                    key={gen} 
+                    onClick={() => setCurrentGen(gen)}
+                    className={`px-3 py-1 rounded-lg text-[9px] font-black transition-all ${currentGen === gen ? 'bg-white text-red-600' : 'text-white/50 hover:text-white'}`}
+                  >
+                    {gen}
+                  </button>
+                ))}
+              </div>
+            )}
             {view === 'lab' && (
               <>
                 <button onClick={() => setShowImportExport(true)} className="text-white/80 hover:text-white font-bold text-xs uppercase">IO</button>
@@ -225,20 +243,11 @@ const App: React.FC = () => {
                 <button onClick={createNewTeam} className="bg-white text-red-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase shadow-md active:translate-y-0.5 transition-all">New Team</button>
               </>
             )}
-            {view !== 'lab' && (
-              <button 
-                onClick={() => setView('lab')}
-                className="bg-white text-red-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase shadow-md active:translate-y-0.5 transition-all"
-              >
-                Go to Lab
-              </button>
-            )}
           </div>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Teams Sidebar (Conditional for Lab view) */}
         {view === 'lab' && (
           <aside className="w-64 bg-white border-r-2 border-slate-200 flex flex-col p-4 gap-4 overflow-y-auto hidden lg:flex">
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Saved Squads</h3>
@@ -264,17 +273,12 @@ const App: React.FC = () => {
           </aside>
         )}
 
-        {/* Main Workspace */}
         <main className="flex-1 flex flex-col overflow-y-auto bg-slate-50">
           {view === 'home' ? (
-            <LandingPage 
-              onNavigate={(v) => setView(v)} 
-              teamCount={currentTeam.pokemons.length}
-            />
+            <LandingPage onNavigate={(v) => setView(v)} teamCount={currentTeam.pokemons.length} />
           ) : view === 'lab' ? (
             <div className="p-6 max-w-[1400px] mx-auto w-full flex flex-col gap-6">
-              {/* Team Identity Bar with Search Suggestions */}
-              <div className="bg-white p-4 rounded-3xl border-2 border-slate-200 flex justify-between items-center shadow-sm relative">
+               <div className="bg-white p-4 rounded-3xl border-2 border-slate-200 flex justify-between items-center shadow-sm relative">
                 <input 
                   value={currentTeam.name} 
                   onChange={(e) => setTeams(teams.map(t => t.id === activeTeamId ? {...t, name: e.target.value} : t))}
@@ -289,7 +293,6 @@ const App: React.FC = () => {
                       value={speciesSearch}
                       onChange={(e) => setSpeciesSearch(e.target.value)}
                       onFocus={() => speciesSearch.length > 1 && setShowSuggestions(true)}
-                      onKeyDown={(e) => e.key === 'Enter' && fetchAndAddSpecies(speciesSearch)}
                     />
                     {showSuggestions && filteredSuggestions.length > 0 && (
                       <div className="absolute top-full left-0 w-full bg-white border-2 border-slate-100 rounded-2xl shadow-xl mt-2 py-2 z-[100] animate-in fade-in zoom-in duration-200">
@@ -306,17 +309,9 @@ const App: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <button 
-                    disabled={isSearching || currentTeam.pokemons.length >= 6}
-                    onClick={() => fetchAndAddSpecies(speciesSearch)}
-                    className="bg-red-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase disabled:opacity-50 min-w-[64px]"
-                  >
-                    {isSearching ? '...' : 'Add'}
-                  </button>
                 </div>
               </div>
 
-              {/* Squad Bar */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[...Array(6)].map((_, i) => (
                   <div 
@@ -329,13 +324,8 @@ const App: React.FC = () => {
                         <img 
                           src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentTeam.pokemons[i].shiny ? 'shiny/' : ''}${currentTeam.pokemons[i].speciesNumber}.png`} 
                           className="w-14 h-14 object-contain drop-shadow-md"
-                          onError={(e) => { (e.target as HTMLImageElement).src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentTeam.pokemons[i].speciesNumber}.png` }}
                         />
                         <span className="text-[10px] font-black uppercase truncate w-full text-center px-2">{currentTeam.pokemons[i].nickname}</span>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setTeams(teams.map(t => t.id === activeTeamId ? {...t, pokemons: t.pokemons.filter((_, idx) => idx !== i)} : t)); }}
-                          className="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors"
-                        >✕</button>
                       </>
                     ) : (
                       <span className="text-[9px] font-black text-slate-200 uppercase">Slot {i+1}</span>
@@ -344,196 +334,187 @@ const App: React.FC = () => {
                 ))}
               </div>
 
-              {/* Editor Section */}
               {activePkmn ? (
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom duration-500">
+                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom duration-500">
                   <div className="xl:col-span-4 flex flex-col gap-6">
                     <div className="bg-white rounded-[40px] border-2 border-slate-200 p-8 shadow-sm flex flex-col items-center">
                       <div className="relative group mb-6">
-                        <div className="absolute inset-0 bg-red-500/5 rounded-full blur-3xl group-hover:opacity-100 opacity-0 transition-opacity"></div>
                         <img 
                           src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activePkmn.speciesNumber}.png`} 
-                          className={`w-48 h-48 relative z-10 drop-shadow-2xl ${activePkmn.shiny ? 'brightness-110 saturate-125 hue-rotate-15' : ''}`}
+                          className={`w-48 h-48 relative z-10 drop-shadow-2xl ${activePkmn.shiny ? 'brightness-110' : ''}`}
                         />
                       </div>
                       <div className="w-full space-y-4">
-                        <div className="flex gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Nickname</label>
                           <input 
                             value={activePkmn.nickname} 
                             onChange={(e) => updateActivePkmn({ nickname: e.target.value })}
-                            className="bg-slate-50 border-2 border-transparent focus:border-red-500 focus:bg-white rounded-2xl px-4 py-3 text-xl font-black w-full outline-none transition-all"
+                            className="bg-slate-50 border-2 border-transparent focus:border-red-500 rounded-2xl px-4 py-3 text-lg font-black w-full outline-none"
                           />
-                          <button 
-                            onClick={() => updateActivePkmn({ shiny: !activePkmn.shiny })}
-                            className={`px-4 rounded-2xl font-black text-[10px] uppercase border-2 transition-all ${activePkmn.shiny ? 'bg-yellow-400 border-yellow-500 text-yellow-900 shadow-[0_3px_0_#ca8a04]' : 'bg-slate-100 border-slate-200 text-slate-400'}`}
-                          >
-                            Shiny
-                          </button>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Level</label>
-                            <input type="number" value={activePkmn.level} onChange={(e) => updateActivePkmn({ level: parseInt(e.target.value) || 1 })} className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-2.5 font-bold text-sm outline-none" />
-                          </div>
-                          <div className="space-y-1">
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Nature</label>
-                            <select value={activePkmn.nature} onChange={(e) => updateActivePkmn({ nature: e.target.value })} className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-2.5 font-bold text-sm outline-none">
+                            <select value={activePkmn.nature} onChange={(e) => updateActivePkmn({ nature: e.target.value })} className="w-full bg-slate-50 border-2 border-transparent focus:border-red-500 rounded-xl px-3 py-2 text-[10px] font-black uppercase outline-none">
                               {NATURES.map(n => <option key={n.name} value={n.name}>{n.name}</option>)}
                             </select>
                           </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Shiny</label>
+                            <button onClick={() => updateActivePkmn({ shiny: !activePkmn.shiny })} className={`w-full py-2 rounded-xl font-black text-[10px] uppercase border-2 ${activePkmn.shiny ? 'bg-yellow-400 text-yellow-900 border-yellow-500' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                              {activePkmn.shiny ? '✨ Shiny' : 'Regular'}
+                            </button>
+                          </div>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Held Item</label>
-                          <input value={activePkmn.item} onChange={(e) => updateActivePkmn({ item: e.target.value })} placeholder="Focus Sash" className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-3 font-bold text-sm outline-none" />
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Item</label>
+                          <input value={activePkmn.item} placeholder="e.g. Life Orb" onChange={(e) => updateActivePkmn({ item: e.target.value })} className="w-full bg-slate-50 border-2 border-transparent focus:border-red-500 rounded-xl px-4 py-3 text-xs font-black uppercase outline-none" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-2">Ability</label>
-                          <input value={activePkmn.ability} onChange={(e) => updateActivePkmn({ ability: e.target.value })} placeholder="Levitate" className="w-full bg-slate-50 border-2 border-transparent rounded-xl px-4 py-3 font-bold text-sm outline-none" />
+                          <select value={activePkmn.ability} onChange={(e) => updateActivePkmn({ ability: e.target.value })} className="w-full bg-slate-50 border-2 border-transparent focus:border-red-500 rounded-xl px-4 py-3 text-xs font-black uppercase outline-none">
+                            {availableAbilities.map(a => <option key={a} value={a}>{a}</option>)}
+                          </select>
                         </div>
                       </div>
                     </div>
                   </div>
-
                   <div className="xl:col-span-8 flex flex-col gap-6">
-                    <div className="bg-white rounded-[40px] border-2 border-slate-200 p-8 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-red-600 rounded-full"></span> 
-                          EV/IV Optimization
-                        </h4>
-                        <div className="space-y-5">
-                          {(Object.keys(activePkmn.baseStats) as StatKey[]).map(key => {
-                            const actual = calculateActualStat(key, activePkmn.baseStats[key], activePkmn.ivs[key], activePkmn.evs[key], activePkmn.level, activePkmn.nature);
-                            return (
-                              <div key={key} className="grid grid-cols-12 items-center gap-2 group">
-                                <span className="col-span-2 font-black text-[9px] text-slate-400 uppercase">{STAT_LABELS[key]}</span>
-                                <input 
-                                  type="range" min="0" max={MAX_STAT_EVS} 
-                                  value={activePkmn.evs[key]} 
-                                  onChange={(e) => updateStat('evs', key, parseInt(e.target.value))} 
-                                  className="col-span-4 accent-red-600 h-1" 
-                                />
-                                <div className="col-span-3 flex gap-1">
-                                  <input type="number" value={activePkmn.evs[key]} onChange={(e) => updateStat('evs', key, parseInt(e.target.value) || 0)} className="w-full bg-slate-50 border-transparent rounded-lg py-1 px-1.5 text-center text-[10px] font-black" />
-                                </div>
-                                <div className="col-span-3 text-right font-black text-red-600 text-sm">{actual}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
-                          <span className="text-[9px] font-black text-slate-400 uppercase">EV Total</span>
-                          <span className="text-xs font-black text-slate-800">{(Object.values(activePkmn.evs) as number[]).reduce((a, b) => a + b, 0)} / {MAX_TOTAL_EVS}</span>
-                        </div>
+                    <div className="bg-white rounded-[40px] border-2 border-slate-200 p-8 shadow-sm">
+                      <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">EV Distribution</h4>
+                        <span className="text-[10px] font-black text-red-600">{(Object.values(activePkmn.evs) as number[]).reduce((a,b)=>a+b, 0)} / 510</span>
                       </div>
-
-                      <div className="space-y-6">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-slate-800 rounded-full"></span> 
-                          Tactical Moveset
-                        </h4>
-                        <div className="flex flex-col gap-3">
-                          {activePkmn.moves.map((move, i) => (
-                            <div key={i} className="relative group">
-                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-300">{i+1}</span>
-                              <input 
-                                value={move} 
-                                onChange={(e) => {
-                                  const newMoves = [...activePkmn.moves];
-                                  newMoves[i] = e.target.value;
-                                  updateActivePkmn({ moves: newMoves });
-                                }} 
-                                placeholder="Add Move..." 
-                                className="w-full bg-slate-50 border-2 border-transparent hover:border-slate-200 focus:border-red-500 rounded-2xl py-3.5 pl-10 pr-4 font-bold text-sm outline-none transition-all"
-                              />
-                            </div>
-                          ))}
-                        </div>
+                      <div className="space-y-4">
+                        {(Object.keys(activePkmn.baseStats) as StatKey[]).map(key => (
+                          <div key={key} className="grid grid-cols-12 items-center gap-4">
+                            <span className="col-span-2 font-black text-[9px] text-slate-400 uppercase">{STAT_LABELS[key]}</span>
+                            <input type="range" min="0" max={MAX_STAT_EVS} value={activePkmn.evs[key]} onChange={(e) => updateStat('evs', key, parseInt(e.target.value))} className="col-span-8 accent-red-600" />
+                            <span className="col-span-2 text-right font-black text-red-600 text-xs">
+                               {calculateActualStat(key, activePkmn.baseStats[key], activePkmn.ivs[key], activePkmn.evs[key], activePkmn.level, activePkmn.nature)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-[40px] border-2 border-slate-200 p-8 shadow-sm">
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-6">Moveset</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {activePkmn.moves.map((move, idx) => (
+                          <div key={idx} className="relative">
+                            <button onClick={() => setMoveSelectorSlot(idx)} className="w-full bg-slate-50 border-2 border-dashed border-slate-200 hover:border-red-400 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 transition-all text-center">
+                              {move || `Move ${idx + 1}`}
+                            </button>
+                            {moveSelectorSlot === idx && (
+                              <div className="absolute top-full left-0 w-full z-[100] bg-white border-2 border-slate-100 rounded-2xl shadow-2xl mt-2 p-2 max-h-48 overflow-y-auto">
+                                {availableMoves.map(m => (
+                                  <button key={m} onClick={() => { const newMoves = [...activePkmn.moves]; newMoves[idx] = m; updateActivePkmn({ moves: newMoves }); setMoveSelectorSlot(null); }} className="w-full text-left px-3 py-1.5 hover:bg-red-50 rounded-lg text-[9px] font-black uppercase transition-colors">{m}</button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="h-[500px] flex flex-col items-center justify-center text-center p-12 bg-white rounded-[40px] border-4 border-dashed border-slate-200">
-                  <h2 className="text-2xl font-black text-slate-300 uppercase tracking-tighter">Laboratory Empty</h2>
-                  <button onClick={() => fetchAndAddSpecies('pikachu')} className="bg-slate-100 text-slate-400 px-6 py-3 rounded-2xl font-black text-xs uppercase hover:bg-red-50 hover:text-red-500 transition-all">Quick Start: Pikachu</button>
-                </div>
-              )}
+              ) : null}
             </div>
           ) : view === 'gallery' ? (
-            <PublicGallery onAction={(teamData, action) => {
-              if (action === 'draft') {
-                const newId = Math.random().toString(36).substr(2, 9);
-                const draftedMons = teamData.pokemons.map((p: any) => ({
+             <PublicGallery onAction={(teamData, action) => {
+              const draftedMons = teamData.pokemons.map((p: any) => {
+                const speciesInfo = POKEMON_SPECIES_LIST.find(s => s.name === p.species);
+                return {
                   id: Math.random().toString(36).substr(2, 9),
                   nickname: p.species,
                   species: p.species,
                   speciesNumber: p.number || 1,
                   level: 100,
-                  item: p.item,
-                  ability: p.ability,
-                  nature: "Serious",
+                  item: p.item || "",
+                  ability: p.ability || "",
+                  nature: p.nature || "Serious",
                   gender: "M",
                   shiny: false,
-                  evs: { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
+                  evs: p.evs || { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
                   ivs: { hp: 31, attack: 31, defense: 31, spAttack: 31, spDefense: 31, speed: 31 },
-                  moves: p.moves,
-                  baseStats: { hp: 100, attack: 100, defense: 100, spAttack: 100, spDefense: 100, speed: 100 },
+                  moves: p.moves || ["", "", "", ""],
+                  baseStats: speciesInfo?.base || { hp: 100, attack: 100, defense: 100, spAttack: 100, spDefense: 100, speed: 100 },
                   createdAt: Date.now(),
                   updatedAt: Date.now()
-                }));
-                const newTeam: Team = { id: newId, name: `Drafted ${teamData.name}`, pokemons: draftedMons, updatedAt: Date.now() };
+                };
+              });
+              if (action === 'draft') {
+                const newId = Math.random().toString(36).substr(2, 9);
+                const newTeam: Team = { id: newId, name: `Drafted: ${teamData.name}`, pokemons: draftedMons, updatedAt: Date.now() };
                 setTeams([...teams, newTeam]);
                 setActiveTeamId(newId);
                 setView('lab');
               } else {
-                setChallengeTeam(teamData.pokemons.map((p: any) => ({
-                   species: p.species,
-                   nickname: p.species,
-                   speciesNumber: p.number || 1,
-                   moves: p.moves,
-                   baseStats: { hp: 100, attack: 100, defense: 100, spAttack: 100, spDefense: 100, speed: 100 },
-                   level: 100,
-                   evs: { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 },
-                   ivs: { hp: 31, attack: 31, defense: 31, spAttack: 31, spDefense: 31, speed: 31 },
-                   nature: "Serious"
-                })) as Pokemon[]);
-                setView('arena');
+                setChallengeTeam(draftedMons);
+                setStadiumMode('ai');
+                setView('stadium');
               }
             }} />
-          ) : (
-            <BattleMode team={currentTeam.pokemons} opponentTeamProp={challengeTeam || undefined} onClose={() => setView('home')} />
-          )}
+          ) : view === 'stadium' ? (
+            currentTeam.pokemons.length === 0 ? (
+              <div className="p-8 max-w-xl mx-auto w-full py-20">
+                <div className="bg-white p-12 rounded-[50px] border-4 border-slate-200 shadow-2xl text-center space-y-8">
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Team Required</h2>
+                  <p className="text-slate-500 font-bold">You need a squad to enter the Stadium.</p>
+                  <button onClick={() => setView('gallery')} className="w-full bg-red-600 text-white py-5 rounded-3xl font-black uppercase text-sm">Draft from Exhibit</button>
+                </div>
+              </div>
+            ) : stadiumMode === 'select' ? (
+              <div className="p-8 max-w-4xl mx-auto w-full py-16">
+                <div className="text-center mb-12">
+                  <h2 className="text-5xl font-black text-slate-900 italic tracking-tighter uppercase">Stadium Selection</h2>
+                  <p className="text-slate-400 font-bold mt-2">Active Generation: <span className="text-red-600">{currentGen}</span></p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div onClick={() => { setChallengeTeam(null); setStadiumMode('ai'); }} className="bg-white p-10 rounded-[50px] border-4 border-transparent hover:border-blue-500 transition-all cursor-pointer group shadow-xl hover:shadow-2xl flex flex-col items-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-blue-100 rounded-[35px] flex items-center justify-center text-5xl group-hover:rotate-12 transition-transform">🤖</div>
+                    <h3 className="text-2xl font-black text-slate-900">OFFLINE AI</h3>
+                    <p className="text-slate-400 text-xs font-bold leading-relaxed px-4">Battle against a randomized squad generated by the computer.</p>
+                    <button className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black uppercase text-xs">Start Training</button>
+                  </div>
+                  <div onClick={() => setStadiumMode('pvp')} className="bg-white p-10 rounded-[50px] border-4 border-transparent hover:border-orange-500 transition-all cursor-pointer group shadow-xl hover:shadow-2xl flex flex-col items-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-orange-100 rounded-[35px] flex items-center justify-center text-5xl group-hover:rotate-12 transition-transform">⚔️</div>
+                    <h3 className="text-2xl font-black text-slate-900">GLOBAL PVP</h3>
+                    <p className="text-slate-400 text-xs font-bold leading-relaxed px-4">Challenge other trainers in real-time by sharing or joining a room code.</p>
+                    <button className="bg-orange-500 text-white px-8 py-3 rounded-2xl font-black uppercase text-xs">Join Lobby</button>
+                  </div>
+                </div>
+              </div>
+            ) : stadiumMode === 'ai' ? (
+              <BattleMode generation={currentGen} team={currentTeam.pokemons} opponentTeamProp={challengeTeam || undefined} onClose={() => { setStadiumMode('select'); setChallengeTeam(null); }} />
+            ) : (
+              activeMultiplayerRoom ? (
+                <MultiplayerBattle generation={currentGen} roomId={activeMultiplayerRoom} team={currentTeam.pokemons} onClose={() => { setActiveMultiplayerRoom(null); setStadiumMode('select'); }} />
+              ) : (
+                <div className="p-8 max-w-lg mx-auto w-full space-y-8 py-20">
+                  <div className="bg-white p-10 rounded-[40px] border-2 border-slate-200 shadow-xl space-y-6">
+                    <button onClick={() => setStadiumMode('select')} className="text-[10px] font-black uppercase text-slate-400 hover:text-red-600 transition-colors">← Back</button>
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Room Code</label>
+                        <input value={multiplayerRoomId} onChange={(e) => setMultiplayerRoomId(e.target.value)} placeholder="e.g. 1234" className="w-full bg-slate-50 border-2 border-transparent focus:border-orange-500 rounded-2xl px-6 py-4 text-2xl font-black text-center outline-none tracking-widest" />
+                      </div>
+                      <button 
+                        onClick={generateRoomCode}
+                        className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-orange-500 transition-colors"
+                      >
+                        Generate Random Code
+                      </button>
+                    </div>
+                    <button onClick={joinMultiplayerRoom} className="w-full bg-orange-500 text-white py-5 rounded-3xl font-black text-sm uppercase shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all active:scale-95">Enter Battle</button>
+                  </div>
+                </div>
+              )
+            )
+          ) : null}
         </main>
       </div>
-
-      {showImportExport && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowImportExport(false)}></div>
-          <div className="bg-white w-full max-w-xl relative z-10 rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-8 border-b-2 border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-black text-red-600 italic">IO DATA PORT</h2>
-              <button onClick={() => setShowImportExport(false)} className="text-slate-400 font-bold hover:text-red-600 transition-colors">✕</button>
-            </div>
-            <div className="p-8 flex-1 overflow-y-auto">
-              <textarea 
-                value={pasteText} 
-                onChange={(e) => setPasteText(e.target.value)} 
-                placeholder="Paste Showdown/PokéPaste here..." 
-                className="w-full h-64 bg-slate-50 border-2 border-slate-100 rounded-2xl p-6 font-mono text-xs text-red-800 outline-none focus:border-red-500 transition-all resize-none"
-              />
-            </div>
-            <div className="p-8 bg-slate-50 flex gap-4">
-              <button onClick={() => { 
-                const text = currentTeam.pokemons.map(exportToShowdown).join('\n\n');
-                navigator.clipboard.writeText(text);
-                alert("Copied Team!");
-              }} className="flex-1 bg-white border-2 border-slate-200 text-slate-800 py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-slate-100 transition-all">Copy Current</button>
-              <button onClick={() => handleImport()} className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-red-200 active:translate-y-1 transition-all">Import to Active</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
